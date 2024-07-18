@@ -10,34 +10,48 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.apirest.entity.ExternalUser;
 import com.example.apirest.entity.User;
 import com.example.apirest.repository.UserRepository;
+import com.example.apirest.service.ExternalUserService;
 
 @RestController
-@RequestMapping("/api/users")
 public class UserController {
 
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private ExternalUserService externalUserService;
+
     // Obtener todos los usuarios
-    @GetMapping("/")
+    @GetMapping("/users")
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    // Crear un nuevo usuario
-    @PostMapping("/")
-    public User createUser(@RequestBody User user) {
+    // Obtener todos los usuarios de una API externa
+    @GetMapping("/external-users")
+    public List<ExternalUser> getExternalUsers() {
+        return externalUserService.getExternalUserInfo();
+    }
 
+    // Obtener un usuario por id
+    @GetMapping("/users/{id}")
+    public User getUserById(@PathVariable Long id) {
+        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    }
+
+    // Crear un nuevo usuario
+    @PostMapping("/users")
+    public User createUser(@RequestBody User user) {
         return userRepository.save(user);
     }
 
     // Actualizar un usuario
-    @PutMapping("/{id}")
+    @PutMapping("/users/{id}")
     public User updateUser(@PathVariable Long id, @RequestBody User userDetails) {
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         user.setUsername(userDetails.getUsername());
@@ -48,9 +62,10 @@ public class UserController {
     }
 
     // Eliminar un usuario
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        userRepository.deleteById(id);
-        return ResponseEntity.ok().build();
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        userRepository.delete(user);
+        return ResponseEntity.noContent().build();
     }
 }
